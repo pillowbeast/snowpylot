@@ -94,30 +94,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.whumpf_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">WhumpfData</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_extract_avalanche_fracture_depth</span><span class="p">(</span><span class="n">meta_data</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Extract avalanche fracture depth from SLF customData profile text.</span>
-
-<span class="sd">    Expected text pattern example:</span>
-<span class="sd">    &quot;1: Avalanche fracture @95cm&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">fracture_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-        <span class="sa">r</span><span class="s2">&quot;avalanche fracture\s*@\s*(\d+(?:\.\d+)?)\s*(cm|mm|m)\b&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
-    <span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">meta_data</span><span class="o">.</span><span class="n">iter</span><span class="p">():</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">prop</span><span class="o">.</span><span class="n">tag</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">prop</span><span class="o">.</span><span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">fracture_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">depth</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">uom</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">depth</span><span class="p">,</span> <span class="n">uom</span><span class="p">]</span>
-
-    <span class="k">return</span> <span class="kc">None</span>
-
-
 <div class="viewcode-block" id="caaml_parser">
 <a class="viewcode-back" href="../../modules/parser.html#snowpylot.caaml_parser">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">caaml_parser</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
@@ -178,18 +154,6 @@
         <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">meta_data</span><span class="o">.</span><span class="n">iter</span><span class="p">(</span><span class="n">caaml_tag</span> <span class="o">+</span> <span class="s2">&quot;comment&quot;</span><span class="p">):</span>
             <span class="n">comment</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">text</span>
             <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">set_comment</span><span class="p">(</span><span class="n">comment</span><span class="p">)</span>
-
-        <span class="n">fracture_depth</span> <span class="o">=</span> <span class="n">_extract_avalanche_fracture_depth</span><span class="p">(</span><span class="n">meta_data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">fracture_depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_avalanche_fracture_depth</span><span class="p">(</span><span class="n">fracture_depth</span><span class="p">)</span>
-
-            <span class="c1"># If fracture data exists in metadata, infer avalanche proximity fields</span>
-            <span class="c1"># that are missing in some SLF profiles.</span>
-            <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_pit_near_avalanche</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">pit_near_avalanche_location</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_pit_near_avalanche_location</span><span class="p">(</span><span class="s2">&quot;crown&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">set_comment</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
     <span class="c1"># caaml_version</span>
     <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">set_caaml_version</span><span class="p">(</span><span class="n">caaml_tag</span><span class="p">)</span>
@@ -278,6 +242,21 @@
             <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_pit_near_avalanche_location</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="n">location</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># avalanche fracture depth (SLF customData)</span>
+    <span class="n">fracture_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">&quot;avalanche fracture\s*@\s*(\d+(?:\.\d+)?)\s*(cm|mm|m)\b&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">meta_data</span><span class="o">.</span><span class="n">iter</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">prop</span><span class="o">.</span><span class="n">tag</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">prop</span><span class="o">.</span><span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">fracture_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">uom</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_avalanche_fracture_depth</span><span class="p">([</span><span class="n">depth</span><span class="p">,</span> <span class="n">uom</span><span class="p">])</span>
+        <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_pit_near_avalanche</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">## Weather Conditions:</span>
     <span class="c1"># (sky_cond, precip_ti, air_temp_pres, wind_speed, wind_dir)</span>
