@@ -86,12 +86,37 @@
   <h1>Source code for snowpylot.caaml_parser</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urljoin</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.layer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Grain</span><span class="p">,</span> <span class="n">Layer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.snow_pit</span><span class="w"> </span><span class="kn">import</span> <span class="n">SnowPit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.snow_profile</span><span class="w"> </span><span class="kn">import</span> <span class="n">DensityObs</span><span class="p">,</span> <span class="n">SurfaceCondition</span><span class="p">,</span> <span class="n">TempObs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.stability_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComprTest</span><span class="p">,</span> <span class="n">ExtColumnTest</span><span class="p">,</span> <span class="n">PropSawTest</span><span class="p">,</span> <span class="n">RBlockTest</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.whumpf_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">WhumpfData</span>
+
+<div class="viewcode-block" id="caaml_url_parser">
+<a class="viewcode-back" href="../../modules/parser.html#snowpylot.caaml_url_parser">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">caaml_url_parser</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The function receives a URL to a SnowPilot observation and retrieves the caaml.xml file,</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+    
+    <span class="n">caaml_href</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">href</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;caaml&quot;</span> <span class="ow">in</span> <span class="n">a</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()),</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">caaml_href</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No caaml.xml file found in the provided URL.&quot;</span><span class="p">)</span>
+    
+    <span class="n">caaml_url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">caaml_href</span><span class="p">)</span>
+    <span class="n">caaml</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">caaml_url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">content</span>
+
+    <span class="c1"># retrieve the caaml.xml file data</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">caaml</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_parse_caaml</span><span class="p">(</span><span class="n">root</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="caaml_parser">
@@ -100,6 +125,14 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The function receives a path to a SnowPilot caaml.xml file, parses the file,</span>
 <span class="sd">    and returns a populated SnowPit object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">_parse_caaml</span><span class="p">(</span><span class="n">root</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_caaml</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function receives the root of a parsed caaml.xml file, parses the file, and returns a populated SnowPit object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">pit</span> <span class="o">=</span> <span class="n">SnowPit</span><span class="p">()</span>  <span class="c1"># create a new SnowPit object</span>
@@ -110,8 +143,6 @@
     <span class="p">)</span>
     <span class="n">gml_tag</span> <span class="o">=</span> <span class="s2">&quot;{http://www.opengis.net/gml}&quot;</span>
     <span class="n">snowpilot_tag</span> <span class="o">=</span> <span class="s2">&quot;{http://www.snowpilot.org/Schemas/caaml}&quot;</span>
-
-    <span class="n">root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
 
     <span class="c1">### Core Info:</span>
     <span class="c1"># (pit_id, pit_name, date, user, location, weather, core comments, caaml_version)</span>
@@ -527,8 +558,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">pit</span><span class="o">.</span><span class="n">whumpf_data</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">return</span> <span class="n">pit</span></div>
-
+    <span class="k">return</span> <span class="n">pit</span>
 </pre></div>
 
            </div>
