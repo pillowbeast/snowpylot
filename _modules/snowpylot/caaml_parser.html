@@ -255,7 +255,7 @@
             <span class="k">continue</span>
         <span class="n">depth</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">uom</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_avalanche_fracture_depth</span><span class="p">([</span><span class="n">depth</span><span class="p">,</span> <span class="n">uom</span><span class="p">])</span>
+        <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_avalanche_initiation_height</span><span class="p">([</span><span class="n">depth</span><span class="p">,</span> <span class="n">uom</span><span class="p">])</span>
         <span class="n">pit</span><span class="o">.</span><span class="n">core_info</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">set_pit_near_avalanche</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">## Weather Conditions:</span>
